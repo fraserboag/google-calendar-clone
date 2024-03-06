@@ -104,6 +104,13 @@ type EventFormModalProps = {
 ) &
   Omit<ModalProps, "children">
 
+// type EventFormModalProps = {
+//   onSubmit: (event: Omit<Event, "id">) => void
+//   onDelete?: () => void
+//   event?: Event
+//   date?: Date
+// } & Omit<ModalProps, "children">
+
 function EventFormModal({ onSubmit, onDelete, event, date, ...modalProps }: EventFormModalProps) {
   return (
     <Modal {...modalProps}>

@@ -12,6 +12,7 @@ import {
   subMonths,
   addMonths,
   isSameDay,
+  parse,
 } from "date-fns"
 import { formatDate } from "../utils/formatDate"
 import { cc } from "../utils/cc"
@@ -106,17 +107,9 @@ function CalendarDay({ day, showWeekDay, selectedMonth, events }: CalendarDayPro
       </div>
       {sortedEvents.length > 0 && (
         <div className="events">
-          <button className="all-day-event blue event">
-            <div className="event-name">Short</div>
-          </button>
-          <button className="all-day-event green event">
-            <div className="event-name">Long Event Name That Just Keeps Going</div>
-          </button>
-          <button className="event">
-            <div className="color-dot blue"></div>
-            <div className="event-time">7am</div>
-            <div className="event-name">Event Name</div>
-          </button>
+          {sortedEvents.map((event) => (
+            <CalendarEvent key={event.id} event={event} />
+          ))}
         </div>
       )}
       <EventFormModal
@@ -126,6 +119,38 @@ function CalendarDay({ day, showWeekDay, selectedMonth, events }: CalendarDayPro
         onSubmit={addEvent}
       />
     </div>
+  )
+}
+
+function CalendarEvent({ event }: { event: Event }) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { updateEvent, deleteEvent } = useEvents()
+  return (
+    <>
+      <button
+        className={cc("event", event.color, event.allDay && "all-day-event")}
+        onClick={() => setIsEditModalOpen(true)}
+      >
+        {event.allDay ? (
+          <div className="event-name">{event.name}</div>
+        ) : (
+          <>
+            <div className={cc("color-dot", event.color)}></div>
+            <div className="event-time">
+              {formatDate(parse(event.startTime, "HH:mm", event.date), { timeStyle: "short" })}
+            </div>
+            <div className="event-name">{event.name}</div>
+          </>
+        )}
+      </button>
+      <EventFormModal
+        event={event}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={(e) => updateEvent(event.id, e)}
+        onDelete={() => deleteEvent(event.id)}
+      />
+    </>
   )
 }
 
@@ -158,7 +183,7 @@ function EventFormModal({ onSubmit, onDelete, event, date, ...modalProps }: Even
     e.preventDefault()
 
     const name = nameRef.current?.value
-    const endTime = nameRef.current?.value
+    const endTime = endTimeRef.current?.value
 
     if (name == null || name === "") return
 
@@ -185,7 +210,6 @@ function EventFormModal({ onSubmit, onDelete, event, date, ...modalProps }: Even
       }
     }
 
-    console.log(newEvent)
     onSubmit(newEvent)
     modalProps.onClose()
   }
@@ -202,7 +226,7 @@ function EventFormModal({ onSubmit, onDelete, event, date, ...modalProps }: Even
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor={`${formId}-name`}>Name</label>
-          <input ref={nameRef} required type="text" id={`${formId}-name`} />
+          <input ref={nameRef} defaultValue={event?.name} required type="text" id={`${formId}-name`} />
         </div>
         <div className="form-group checkbox">
           <input
@@ -229,6 +253,7 @@ function EventFormModal({ onSubmit, onDelete, event, date, ...modalProps }: Even
             <label htmlFor={`${formId}-end-time`}>End Time</label>
             <input
               ref={endTimeRef}
+              defaultValue={event?.endTime}
               min={startTime}
               required={!isAllDayChecked}
               disabled={isAllDayChecked}
